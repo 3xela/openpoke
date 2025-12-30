@@ -10,7 +10,7 @@ from ...config import get_settings
 from ...services.conversation import get_conversation_log, get_working_memory_log
 from ...openrouter_client import request_chat_completion
 from ...logging_config import logger
-
+from ...utils import AgentRanker
 
 @dataclass
 class InteractionResult:
@@ -55,6 +55,7 @@ class InteractionAgentRuntime:
         self.conversation_log = get_conversation_log()
         self.working_memory_log = get_working_memory_log()
         self.tool_schemas = get_tool_schemas()
+        self.ranker = AgentRanker
 
         if not self.api_key:
             raise ValueError(
@@ -71,7 +72,7 @@ class InteractionAgentRuntime:
 
             system_prompt = build_system_prompt()
             messages = prepare_message_with_history(
-                user_message, transcript_before, message_type="user"
+                user_message, transcript_before, ranker = self.ranker ,message_type="user"
             )
 
             logger.info("Processing user message through interaction agent")
@@ -106,7 +107,7 @@ class InteractionAgentRuntime:
 
             system_prompt = build_system_prompt()
             messages = prepare_message_with_history(
-                agent_message, transcript_before, message_type="agent"
+                agent_message, transcript_before, ranker = self.ranker ,message_type="agent"
             )
 
             logger.info("Processing execution agent results")
