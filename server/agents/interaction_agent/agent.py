@@ -26,6 +26,7 @@ def prepare_message_with_history(
     sections: List[str] = []
 
     sections.append(_render_conversation_history(transcript))
+    #TODO here is the bug
     sections.append(f"<active_agents>\n{_render_active_agents()}\n</active_agents>")
     sections.append(_render_current_turn(latest_text, message_type))
 
