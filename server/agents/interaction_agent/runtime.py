@@ -47,7 +47,7 @@ class InteractionAgentRuntime:
     MAX_TOOL_ITERATIONS = 8
 
     # Initialize interaction agent runtime with settings and service dependencies
-    def __init__(self) -> None:
+    def __init__(self, ranker = None) -> None:
         settings = get_settings()
         self.api_key = settings.openrouter_api_key
         self.model = settings.interaction_agent_model
@@ -55,7 +55,7 @@ class InteractionAgentRuntime:
         self.conversation_log = get_conversation_log()
         self.working_memory_log = get_working_memory_log()
         self.tool_schemas = get_tool_schemas()
-        self.ranker = AgentRanker()
+        self.ranker = ranker
 
         if not self.api_key:
             raise ValueError(
