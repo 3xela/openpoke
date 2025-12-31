@@ -55,7 +55,7 @@ class InteractionAgentRuntime:
         self.conversation_log = get_conversation_log()
         self.working_memory_log = get_working_memory_log()
         self.tool_schemas = get_tool_schemas()
-        self.ranker = AgentRanker
+        self.ranker = AgentRanker()
 
         if not self.api_key:
             raise ValueError(
