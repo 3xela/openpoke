@@ -7,6 +7,7 @@ from .timezones import (
     resolve_user_timezone,
 )
 from .ranker import AgentRanker
+from .deps import get_agent_ranker, get_rule_store
 
 __all__ = [
     "error_response",
@@ -16,4 +17,5 @@ __all__ = [
     "now_in_user_timezone",
     "resolve_user_timezone",
     "AgentRanker"
+    "get_agent_ranker, get_rule_store"
 ]

@@ -10,6 +10,7 @@ from typing import Dict, List, Optional
 
 from .runtime import ExecutionAgentRuntime, ExecutionResult
 from ...logging_config import logger
+from ...utils import get_rule_store, get_agent_ranker
 
 
 @dataclass
@@ -59,7 +60,7 @@ class ExecutionBatchManager:
 
         try:
             logger.info(f"[{agent_name}] Execution started")
-            runtime = ExecutionAgentRuntime(agent_name=agent_name)
+            runtime = ExecutionAgentRuntime(agent_name=agent_name, rule_store=get_rule_store())
             result = await asyncio.wait_for(
                 runtime.execute(instructions),
                 timeout=self.timeout_seconds,
@@ -183,7 +184,7 @@ class ExecutionBatchManager:
 
         from ..interaction_agent.runtime import InteractionAgentRuntime
 
-        runtime = InteractionAgentRuntime()
+        runtime = InteractionAgentRuntime(ranker = get_agent_ranker(), rule_store=get_rule_store())
         try:
             loop = asyncio.get_running_loop()
         except RuntimeError:

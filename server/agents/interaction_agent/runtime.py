@@ -10,7 +10,10 @@ from ...config import get_settings
 from ...services.conversation import get_conversation_log, get_working_memory_log
 from ...openrouter_client import request_chat_completion
 from ...logging_config import logger
-from ...utils import AgentRanker
+from ...services.rules.store import RuleStore
+from ...services.rules.models import RuleScope
+from ...services.rules.parser_agent import parse_user_rule
+
 
 @dataclass
 class InteractionResult:
@@ -47,7 +50,7 @@ class InteractionAgentRuntime:
     MAX_TOOL_ITERATIONS = 8
 
     # Initialize interaction agent runtime with settings and service dependencies
-    def __init__(self, ranker = None) -> None:
+    def __init__(self, ranker, rule_store) -> None:
         settings = get_settings()
         self.api_key = settings.openrouter_api_key
         self.model = settings.interaction_agent_model
@@ -56,7 +59,7 @@ class InteractionAgentRuntime:
         self.working_memory_log = get_working_memory_log()
         self.tool_schemas = get_tool_schemas()
         self.ranker = ranker
-
+        self.rule_store = rule_store
         if not self.api_key:
             raise ValueError(
                 "OpenRouter API key not configured. Set OPENROUTER_API_KEY environment variable."
@@ -67,6 +70,19 @@ class InteractionAgentRuntime:
         """Handle a user-authored message."""
 
         try:
+            parsed = parse_user_rule(user_message, scope=RuleScope.GLOBAL)
+            logger.info(
+                "Rule parse",
+                extra={
+                    "text": user_message,
+                    "is_rule": parsed is not None,
+                },
+            )
+            if parsed is not None:
+                if self.rule_store is None:
+                    raise RuntimeError("RuleStore not configured")
+                self.rule_store.add_rule(parsed.rule)
+                return InteractionResult(success=True, response=parsed.explanation)
             transcript_before = self._load_conversation_transcript()
             self.conversation_log.record_user_message(user_message)
 
@@ -90,7 +106,7 @@ class InteractionAgentRuntime:
             )
 
         except Exception as exc:
-            logger.error("Interaction agent failed", extra={"error": str(exc)})
+            logger.exception("Interaction agent failed")
             return InteractionResult(
                 success=False,
                 response="",

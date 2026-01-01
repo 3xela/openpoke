@@ -10,6 +10,9 @@ from .tools import get_tool_schemas, get_tool_registry
 from ...config import get_settings
 from ...openrouter_client import request_chat_completion
 from ...logging_config import logger
+from server.services.rules.engine import check_tool_call
+from server.services.rules.models import RuleScope
+from server.services.rules.store import RuleStore
 
 
 @dataclass
@@ -28,13 +31,15 @@ class ExecutionAgentRuntime:
     MAX_TOOL_ITERATIONS = 8
 
     # Initialize execution agent runtime with settings, tools, and agent instance
-    def __init__(self, agent_name: str):
+    def __init__(self, agent_name: str, rule_store):
         settings = get_settings()
         self.agent = ExecutionAgent(agent_name)
         self.api_key = settings.openrouter_api_key
         self.model = settings.execution_agent_model
         self.tool_registry = get_tool_registry(agent_name=agent_name)
         self.tool_schemas = get_tool_schemas()
+        self.rule_store = rule_store
+        self.rule_scope = RuleScope.CHAT
 
         if not self.api_key:
             raise ValueError("OpenRouter API key not configured. Set OPENROUTER_API_KEY environment variable.")
@@ -90,6 +95,42 @@ class ExecutionAgentRuntime:
                             "content": self._format_tool_result(
                                 tool_name or "<unknown>", False, failure, tool_args
                             ),
+                        }
+                        messages.append(tool_message)
+                        continue
+                    
+                                        # ---- RULE ENFORCEMENT (hard gate) ----
+                    rules = self.rule_store.list_rules(enabled_only=True)
+
+                    decision = check_tool_call(
+                        rules=rules,
+                        scope=self.rule_scope,  # RuleScope.CHAT or RuleScope.EMAIL
+                        tool_name=tool_name,
+                        tool_args=tool_args,
+                    )
+
+                    if not decision.allowed:
+                        # Don't execute tool; tell the model/user why.
+                        failure = {"error": "blocked_by_rule", "detail": decision.block_reason or "Blocked by user rule."}
+                        tool_message = {
+                            "role": "tool",
+                            "tool_call_id": call_id or tool_name,
+                            "content": self._format_tool_result(tool_name, False, failure, tool_args),
+                        }
+                        messages.append(tool_message)
+                        continue
+
+                    if decision.requires_confirmation:
+                        failure = {
+                            "error": "confirmation_required",
+                            "detail": decision.confirm_reason or "This action requires confirmation by user rule.",
+                            # Optional: include a hint to retry with confirmed=True
+                            "hint": "Re-issue the tool call with confirmed=true if the user approves.",
+                        }
+                        tool_message = {
+                            "role": "tool",
+                            "tool_call_id": call_id or tool_name,
+                            "content": self._format_tool_result(tool_name, False, failure, tool_args),
                         }
                         messages.append(tool_message)
                         continue

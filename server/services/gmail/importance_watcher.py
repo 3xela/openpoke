@@ -13,17 +13,18 @@ from .seen_store import GmailSeenStore
 from .importance_classifier import classify_email_importance
 from ...logging_config import logger
 from ...utils.timezones import convert_to_user_timezone
-from ...utils import AgentRanker
+from ...utils import get_rule_store, get_agent_ranker
+from ..rules.store import RuleStore
 
 
 if TYPE_CHECKING:  # pragma: no cover - typing only
     from ...agents.interaction_agent.runtime import InteractionAgentRuntime
 
 
-def _resolve_interaction_runtime(ranker) -> "InteractionAgentRuntime":
+def _resolve_interaction_runtime(ranker, rule_store) -> "InteractionAgentRuntime":
     from ...agents.interaction_agent.runtime import InteractionAgentRuntime
 
-    return InteractionAgentRuntime(ranker = ranker)
+    return InteractionAgentRuntime(ranker = get_agent_ranker(), rule_store=get_rule_store)
 
 
 DEFAULT_POLL_INTERVAL_SECONDS = 60.0
@@ -55,7 +56,6 @@ class ImportantEmailWatcher:
         self._cleaner = EmailTextCleaner(max_url_length=60)
         self._has_seeded_initial_snapshot = False
         self._last_poll_timestamp: Optional[datetime] = None
-        self.ranker = AgentRanker()
 
     # Start the background email polling task
     async def start(self) -> None:
@@ -222,7 +222,7 @@ class ImportantEmailWatcher:
         self._complete_poll(user_now)
 
     async def _dispatch_summary(self, summary: str) -> None:
-        runtime = _resolve_interaction_runtime(self.ranker)
+        runtime = _resolve_interaction_runtime(get_agent_ranker(), get_rule_store())
         try:
             contextualized = f"Important email watcher notification:\n{summary}"
             await runtime.handle_agent_message(contextualized)

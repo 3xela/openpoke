@@ -7,7 +7,7 @@ from fastapi.responses import JSONResponse, PlainTextResponse
 from ...agents.interaction_agent.runtime import InteractionAgentRuntime
 from ...logging_config import logger
 from ...models import ChatMessage, ChatRequest
-from ...utils import error_response
+from ...utils import error_response, get_agent_ranker, get_rule_store
 
 
 # Extract the most recent user message from the chat request payload
@@ -32,7 +32,7 @@ async def handle_chat_request(payload: ChatRequest) -> Union[PlainTextResponse, 
     logger.info("chat request", extra={"message_length": len(user_content)})
 
     try:
-        runtime = InteractionAgentRuntime()
+        runtime = InteractionAgentRuntime(ranker = get_agent_ranker(), rule_store=get_rule_store())
     except ValueError as ve:
         # Missing API key error
         logger.error("configuration error", extra={"error": str(ve)})
