@@ -14,7 +14,6 @@ from .importance_classifier import classify_email_importance
 from ...logging_config import logger
 from ...utils.timezones import convert_to_user_timezone
 from ...utils import get_rule_store, get_agent_ranker
-from ..rules.store import RuleStore
 
 
 if TYPE_CHECKING:  # pragma: no cover - typing only

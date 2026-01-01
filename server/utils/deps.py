@@ -1,5 +1,5 @@
 # server/agents/interaction_agent/deps.py
-from ..services.rules.store import RuleStore
+from ..services.rules import RuleStore
 from .ranker import AgentRanker
 
 _ranker = None

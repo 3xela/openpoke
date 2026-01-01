@@ -10,9 +10,8 @@ from .tools import get_tool_schemas, get_tool_registry
 from ...config import get_settings
 from ...openrouter_client import request_chat_completion
 from ...logging_config import logger
-from server.services.rules.engine import check_tool_call
-from server.services.rules.models import RuleScope
-from server.services.rules.store import RuleStore
+from server.services.rules import check_tool_call
+from server.services.rules import RuleScope
 
 
 @dataclass
