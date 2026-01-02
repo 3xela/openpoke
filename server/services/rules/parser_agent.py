@@ -151,7 +151,7 @@ def parse_user_rule(text: str, scope: RuleScope = RuleScope.GLOBAL) -> Optional[
         )
         return RuleParseResult(
             rule=rule,
-            explanation=f"I’ll block sending emails (tools: {', '.join(sorted(_SEND_TOOLS))}).",
+            explanation=f"I’ll block sending emails.",
             confidence=0.95,
             needs_confirmation=False,
         )
@@ -172,7 +172,7 @@ def parse_user_rule(text: str, scope: RuleScope = RuleScope.GLOBAL) -> Optional[
         )
         return RuleParseResult(
             rule=rule,
-            explanation=f"I’ll block forwarding emails (tools: {', '.join(sorted(_FORWARD_TOOLS))}).",
+            explanation=f"I’ll block forwarding emails.",
             confidence=0.95,
             needs_confirmation=False,
         )
@@ -198,7 +198,7 @@ def parse_user_rule(text: str, scope: RuleScope = RuleScope.GLOBAL) -> Optional[
             )
             return RuleParseResult(
                 rule=rule,
-                explanation=f"I’ll require confirmation before sending emails (tools: {', '.join(sorted(_SEND_TOOLS))}).",
+                explanation=f"I’ll require confirmation before sending emails.",
                 confidence=0.9,
                 needs_confirmation=False,
             )
@@ -219,7 +219,7 @@ def parse_user_rule(text: str, scope: RuleScope = RuleScope.GLOBAL) -> Optional[
         )
         return RuleParseResult(
             rule=rule,
-            explanation=f"I’ll block deleting drafts (tools: {', '.join(sorted(_DELETE_TOOLS))}).",
+            explanation=f"I’ll block deleting drafts.",
             confidence=0.9,
             needs_confirmation=False,
         )

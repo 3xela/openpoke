@@ -67,28 +67,30 @@ class InteractionAgentRuntime:
 
     # Main entry point for processing user messages through the LLM interaction loop
     async def execute(self, user_message: str) -> InteractionResult:
-        """Handle a user-authored message."""
-
         try:
-            parsed = parse_user_rule(user_message, scope=RuleScope.GLOBAL)
-            logger.info(
-                "Rule parse",
-                extra={
-                    "text": user_message,
-                    "is_rule": parsed is not None,
-                },
-            )
-            if parsed is not None:
-                if self.rule_store is None:
-                    raise RuntimeError("RuleStore not configured")
-                self.rule_store.add_rule(parsed.rule)
-                return InteractionResult(success=True, response=parsed.explanation)
             transcript_before = self._load_conversation_transcript()
             self.conversation_log.record_user_message(user_message)
 
+            parsed = parse_user_rule(user_message, scope=RuleScope.GLOBAL)
+            logger.info(
+                "Rule parse",
+                extra={"text": user_message, "is_rule": parsed is not None},
+            )
+
+            if parsed is not None:
+                if self.rule_store is None:
+                    raise RuntimeError("RuleStore not configured")
+
+                self.rule_store.add_rule(parsed.rule)
+
+                # Persist the assistant acknowledgement so it doesn't "disappear"
+                self.conversation_log.record_reply(parsed.explanation)
+
+                return InteractionResult(success=True, response=parsed.explanation)
+
             system_prompt = build_system_prompt()
             messages = prepare_message_with_history(
-                user_message, transcript_before, ranker = self.ranker ,message_type="user"
+                user_message, transcript_before, ranker=self.ranker, message_type="user"
             )
 
             logger.info("Processing user message through interaction agent")
@@ -104,7 +106,7 @@ class InteractionAgentRuntime:
                 response=final_response,
                 execution_agents_used=len(summary.execution_agents),
             )
-
+        
         except Exception as exc:
             logger.exception("Interaction agent failed")
             return InteractionResult(
