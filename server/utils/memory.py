@@ -99,24 +99,33 @@ class Memory:
         return float(self.alpha * novelty + (1 - self.alpha) * dist)
 
 
-    def semantic_compression(self, text: str, baseline_text: str) -> None:
-        if not text.strip():
-            return
+def semantic_compression(self, text: str, baseline_text: str, top_k: int = 3) -> None:
+    if not text.strip():
+        return
 
-        baseline_words = unique_words(baseline_text)
-        baseline_embed = self.model.encode(baseline_text) if baseline_text.strip() else None
+    baseline_words = unique_words(baseline_text)
+    baseline_embed = self.model.encode(baseline_text) if baseline_text.strip() else None
 
-        n = len(text)
-        end = max(1, n - self.window_size + 1)
+    n = len(text)
+    end = max(1, n - self.window_size + 1)
 
-        added = 0
-        for i in range(0, end, self.step):
-            window = text[i : i + self.window_size]
-            score = self.information_score(window, baseline_words, baseline_embed)
-            if score >= self.tau:
-                emb = self.model.encode(window).tolist()
-                self.memory.memories.append(MemoryItem(text=window, embedding=emb))
-                added += 1
+    choices = []
+    for i in range(0, end, self.step):
+        window = text[i : i + self.window_size]
+        score = self.information_score(window, baseline_words, baseline_embed)
+        if score >= self.tau:
+            emb = self.model.encode(window).tolist()
+            choices.append((score, window, emb))
 
-        if added:
-            self._save()
+    if not choices:
+        return
+
+    choices.sort(key=lambda x: x[0], reverse=True)
+
+    k = min(top_k, len(choices))
+    for j in range(k):
+        _, text_window, emb = choices[j]
+        self.memory.memories.append(MemoryItem(text=text_window, embedding=emb))
+
+    self._save()
+
