@@ -32,7 +32,7 @@ async def handle_chat_request(payload: ChatRequest) -> Union[PlainTextResponse, 
     logger.info("chat request", extra={"message_length": len(user_content)})
 
     try:
-        runtime = InteractionAgentRuntime(ranker = get_agent_ranker(), rule_store=get_rule_store(), get_memory())
+        runtime = InteractionAgentRuntime(ranker = get_agent_ranker(), rule_store=get_rule_store(), memory=get_memory())
     except ValueError as ve:
         # Missing API key error
         logger.error("configuration error", extra={"error": str(ve)})

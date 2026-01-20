@@ -8,6 +8,7 @@ from typing import List, Optional
 class MemoryItem:
     text: str
     embedding: Optional[List[float]] = None
+    sim_score : float # this is for debugging, we need to know what the sim score is when we create a memoryitem 
 
 
 @dataclass

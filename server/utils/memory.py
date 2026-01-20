@@ -52,6 +52,7 @@ class Memory:
         self.tau = 0.75
         self.alpha = 0.5
         self.window_size = 255 #255 chars of sliding window , this is arbitrary rn, needs some testing + thought but this will grab a couple words.
+        self.step = max(self.window_size//4 , 1)
 
     def load_memories(self) -> LLMMemory:
         self.memory_path.parent.mkdir(parents=True, exist_ok=True)
@@ -83,31 +84,39 @@ class Memory:
     def information_score(
         self,
         window: str,
-        prev_text: str,
-        prev_embed: np.ndarray,
+        baseline_words: Set[str],
+        baseline_embed: Optional[np.ndarray],
     ) -> float:
-        window_embed = self.model.encode(window)
-        sim = cosine_sim(window_embed, prev_embed) 
-        novelty = new_word_ratio(window, prev_text)
-        score = self.alpha * novelty + (1 - self.alpha) * (1 - sim)
-        return float(score)
+        w = unique_words(window)
+        novelty = 0.0 if not w else len(w - baseline_words) / len(w)
 
-    def semantic_compression(self, history: str) -> None:
+        if baseline_embed is None:
+            dist = 1.0
+        else:
+            sim = cosine_sim(self.model.encode(window), baseline_embed)
+            dist = 0.5 * (1 - sim)
 
-        history_embed = self.model.encode(history)
+        return float(self.alpha * novelty + (1 - self.alpha) * dist)
 
-        n = len(history)
+
+    def semantic_compression(self, text: str, baseline_text: str) -> None:
+        if not text.strip():
+            return
+
+        baseline_words = unique_words(baseline_text)
+        baseline_embed = self.model.encode(baseline_text) if baseline_text.strip() else None
+
+        n = len(text)
         end = max(1, n - self.window_size + 1)
 
+        added = 0
         for i in range(0, end, self.step):
-            window = history[i : i + self.window_size]
-            prev_text = history[:i]
-            score = self.information_score(window, prev_text, history_embed)
-
+            window = text[i : i + self.window_size]
+            score = self.information_score(window, baseline_words, baseline_embed)
             if score >= self.tau:
-                self.create_memory(window)
+                emb = self.model.encode(window).tolist()
+                self.memory.memories.append(MemoryItem(text=window, embedding=emb))
+                added += 1
 
-    def get_text_memories_str(self) -> str:
-        return "\n".join(m.text for m in self.memory.memories if m.text)
-
-        
+        if added:
+            self._save()

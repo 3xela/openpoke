@@ -28,12 +28,12 @@ def prepare_message_with_memory(
     """Compose a message that bundles history, roster, and the latest turn."""
     sections: List[str] = []
 
-    memory.semantic_compression(transcript)
+    memory.semantic_compression(latest_text, baseline_text=transcript)
 
     sections.append(_render_conversation_history(transcript))
     sections.append(f"<active_agents>\n{_render_relevant_agents(latest_text, ranker)}\n</active_agents>")
     sections.append(_render_current_turn(latest_text, message_type))
-    sections.append(memory.get_text_memories_str)
+    sections.append(memory.get_text_memories_str())
     content = "\n\n".join(sections)
     return [{"role": "user", "content": content}]
 
@@ -48,9 +48,6 @@ def prepare_message_with_history(
     sections: List[str] = []
 
     sections.append(_render_conversation_history(transcript))
-    #TODO here is the bug
-    #we should be capping the # of agents returned by render active agents. this is the main source of pain that we have. 
-    #should be like 5 or 10 or something, just a hard cap so that the length is bounded
     sections.append(f"<active_agents>\n{_render_relevant_agents(latest_text, ranker)}\n</active_agents>")
     sections.append(_render_current_turn(latest_text, message_type))
 
