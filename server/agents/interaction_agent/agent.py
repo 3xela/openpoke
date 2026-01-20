@@ -5,7 +5,7 @@ from pathlib import Path
 from typing import Dict, List
 
 from ...services.execution import get_agent_roster
-from ...utils import AgentRanker
+from ...utils import AgentRanker, Memory
 
 _prompt_path = Path(__file__).parent / "system_prompt.md"
 SYSTEM_PROMPT = _prompt_path.read_text(encoding="utf-8").strip()
@@ -16,6 +16,26 @@ def build_system_prompt() -> str:
     """Return the static system prompt for the interaction agent."""
     return SYSTEM_PROMPT
 
+
+# Build structured message with conversation history, active agents, memory and current turn 
+def prepare_message_with_memory(
+    latest_text: str,
+    transcript: str,
+    ranker: AgentRanker,
+    message_type: str = "user",
+) -> List[Dict[str, str]]:
+    """Compose a message that bundles history, roster, and the latest turn."""
+    sections: List[str] = []
+
+    sections.append(_render_conversation_history(transcript))
+    #TODO here is the bug
+    #we should be capping the # of agents returned by render active agents. this is the main source of pain that we have. 
+    #should be like 5 or 10 or something, just a hard cap so that the length is bounded
+    sections.append(f"<active_agents>\n{_render_relevant_agents(latest_text, ranker)}\n</active_agents>")
+    sections.append(_render_current_turn(latest_text, message_type))
+
+    content = "\n\n".join(sections)
+    return [{"role": "user", "content": content}]
 
 # Build structured message with conversation history, active agents, and current turn
 def prepare_message_with_history(

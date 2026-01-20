@@ -3,8 +3,8 @@ import numpy as np
 
 
 class AgentRanker:
-    def __init__(self, model_name: str = "all-MiniLM-L6-v2", top_k: int = 5):
-        self.model = SentenceTransformer(model_name)
+    def __init__(self, model : SentenceTransformer , top_k: int = 5):
+        self.model = model
         self.top_k = top_k
 
         self.agent_names: list[str] = []
@@ -49,7 +49,6 @@ class AgentRanker:
 
         query_emb = self.model.encode(query)  # (D,)
 
-        # cosine similarity, vectorized: (N,)
         scores = (self.embeddings @ query_emb) / (
             np.linalg.norm(self.embeddings, axis=1) * np.linalg.norm(query_emb)
         )
