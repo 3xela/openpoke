@@ -10,7 +10,7 @@ from typing import Dict, List, Optional
 
 from .runtime import ExecutionAgentRuntime, ExecutionResult
 from ...logging_config import logger
-from ...utils import get_rule_store, get_agent_ranker
+from ...utils import get_rule_store, get_agent_ranker, get_memory
 
 
 @dataclass
@@ -184,7 +184,7 @@ class ExecutionBatchManager:
 
         from ..interaction_agent.runtime import InteractionAgentRuntime
 
-        runtime = InteractionAgentRuntime(ranker = get_agent_ranker(), rule_store=get_rule_store())
+        runtime = InteractionAgentRuntime(ranker = get_agent_ranker(), rule_store=get_rule_store(), memory=get_memory)
         try:
             loop = asyncio.get_running_loop()
         except RuntimeError:

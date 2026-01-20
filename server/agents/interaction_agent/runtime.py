@@ -4,7 +4,7 @@ import json
 from dataclasses import dataclass, field
 from typing import Any, Dict, List, Optional, Set
 
-from .agent import build_system_prompt, prepare_message_with_history
+from .agent import build_system_prompt, prepare_message_with_memory
 from .tools import ToolResult, get_tool_schemas, handle_tool_call
 from ...config import get_settings
 from ...services.conversation import get_conversation_log, get_working_memory_log
@@ -50,7 +50,7 @@ class InteractionAgentRuntime:
     MAX_TOOL_ITERATIONS = 8
 
     # Initialize interaction agent runtime with settings and service dependencies
-    def __init__(self, ranker, rule_store) -> None:
+    def __init__(self, ranker, rule_store, memory) -> None:
         settings = get_settings()
         self.api_key = settings.openrouter_api_key
         self.model = settings.interaction_agent_model
@@ -60,6 +60,7 @@ class InteractionAgentRuntime:
         self.tool_schemas = get_tool_schemas()
         self.ranker = ranker
         self.rule_store = rule_store
+        self.memory = memory
         if not self.api_key:
             raise ValueError(
                 "OpenRouter API key not configured. Set OPENROUTER_API_KEY environment variable."
@@ -89,8 +90,8 @@ class InteractionAgentRuntime:
                 return InteractionResult(success=True, response=parsed.explanation)
 
             system_prompt = build_system_prompt()
-            messages = prepare_message_with_history(
-                user_message, transcript_before, ranker=self.ranker, message_type="user"
+            messages = prepare_message_with_memory(
+                user_message, transcript_before, ranker=self.ranker,memory = self.memory , message_type="user"
             )
 
             logger.info("Processing user message through interaction agent")
@@ -124,8 +125,8 @@ class InteractionAgentRuntime:
             self.conversation_log.record_agent_message(agent_message)
 
             system_prompt = build_system_prompt()
-            messages = prepare_message_with_history(
-                agent_message, transcript_before, ranker = self.ranker ,message_type="agent"
+            messages = prepare_message_with_memory(
+                agent_message, transcript_before, ranker = self.ranker, memory=self.memory ,message_type="agent"
             )
 
             logger.info("Processing execution agent results")

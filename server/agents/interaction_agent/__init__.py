@@ -12,6 +12,7 @@ __all__ = [
     "InteractionResult",
     "build_system_prompt",
     "prepare_message_with_history",
+    "prepate_message_with_memory",
     "ToolResult",
     "get_tool_schemas",
     "handle_tool_call",
