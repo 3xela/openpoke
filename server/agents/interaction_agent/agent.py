@@ -1,5 +1,5 @@
 """Interaction agent helpers for prompt construction."""
-
+import re
 from html import escape
 from pathlib import Path
 from typing import Dict, List
@@ -10,6 +10,12 @@ from ...utils import AgentRanker, Memory
 _prompt_path = Path(__file__).parent / "system_prompt.md"
 SYSTEM_PROMPT = _prompt_path.read_text(encoding="utf-8").strip()
 
+
+USER_MSG_RE = re.compile(r"<user_message\b[^>]*>(.*?)</user_message>", re.DOTALL)
+
+def user_only_from_transcript(transcript: str) -> str:
+    parts = [m.strip() for m in USER_MSG_RE.findall(transcript)]
+    return "\n".join(p for p in parts if p)
 
 # Load and return the pre-defined system prompt from markdown file
 def build_system_prompt() -> str:
@@ -25,15 +31,18 @@ def prepare_message_with_memory(
     memory: Memory,
     message_type: str = "user",
 ) -> List[Dict[str, str]]:
-    """Compose a message that bundles history, roster, and the latest turn."""
     sections: List[str] = []
 
-    memory.semantic_compression(latest_text, baseline_text=transcript)
+    user_transcript = user_only_from_transcript(transcript)
+
+    if message_type == "user":
+        memory.semantic_compression(latest_text, baseline_text=user_transcript)
 
     sections.append(_render_conversation_history(transcript))
     sections.append(f"<active_agents>\n{_render_relevant_agents(latest_text, ranker)}\n</active_agents>")
     sections.append(_render_current_turn(latest_text, message_type))
-    sections.append(memory.get_text_memories_str())
+    sections.append(f"<memories>\n{memory.get_text_memories_str()}\n</memories>")
+
     content = "\n\n".join(sections)
     return [{"role": "user", "content": content}]
 

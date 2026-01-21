@@ -8,7 +8,7 @@ from .timezones import (
 )
 from .ranker import AgentRanker
 from .memory import Memory
-from .deps import get_agent_ranker, get_rule_store, get_embedder, get_memory
+from .deps import get_agent_ranker, get_rule_store, get_memory
 
 __all__ = [
     "error_response",
@@ -20,5 +20,6 @@ __all__ = [
     "AgentRanker"
     "get_agent_ranker", 
     "get_rule_store",
-    "Memory"
+    "get_memory",
+    "Memory",
 ]

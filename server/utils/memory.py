@@ -17,7 +17,7 @@ WORD_RE = re.compile(r"[a-zA-Z0-9_]+")
 STOPWORDS = {
     "the","a","an","and","or","but","if","then","else","so","to","of","in","on","for","with","at","by",
     "is","are","was","were","be","been","being","it","this","that","these","those",
-    "i","you","he","she","we","they","me","my","your","our","their",
+    "i","you","he","she","we","they","me","my","your","our","their", "hey", "yes", "thx", "thanks",
 }
 
 def unique_words(text: str) -> Set[str]:
@@ -47,9 +47,9 @@ def cosine_sim(a: np.ndarray, b: np.ndarray) -> float:
 class Memory:
     def __init__(self, embedder: SentenceTransformer):
         self.model = embedder
-        self.memory_path = Path(__file__).resolve().parents[2] / "data" / "memory.json"
+        self.memory_path = Path(__file__).resolve().parents[1] / "data" / "memory.json"
         self.memory: LLMMemory = self.load_memories()
-        self.tau = 0.75
+        self.sim_threshhold = 0.35
         self.alpha = 0.5
         self.window_size = 255 #255 chars of sliding window , this is arbitrary rn, needs some testing + thought but this will grab a couple words.
         self.step = max(self.window_size//4 , 1)
@@ -70,16 +70,11 @@ class Memory:
             mem = self.memory
         with self.memory_path.open("w", encoding="utf-8") as f:
             json.dump(mem.to_dict(), f, indent=2)
+    
+    def get_text_memories_str(self, limit: int = 20) -> str:
+        mems = self.memory.memories[-limit:]
+        return "\n".join(m.text for m in mems if m.text)
 
-    def create_memory(self, memory_text_window: str) -> MemoryItem:
-        emb = self.model.encode(memory_text_window)
-        item = MemoryItem(
-            text=memory_text_window,
-            embedding=emb.tolist(), 
-        )
-        self.memory.memories.append(item)
-        self._save()
-        return item
 
     def information_score(
         self,
@@ -100,7 +95,12 @@ class Memory:
 
 
     def semantic_compression(self, text: str, baseline_text: str, top_k: int = 3) -> None:
-        if not text.strip():
+        LOW_SIGNAL = {"hello","hi","thanks","thank you","ok","lol","test","yes","no"}
+
+        text = text.strip()
+        t = text.lower()
+
+        if len(text) < 15 or t in LOW_SIGNAL or text.endswith("?"):
             return
 
         baseline_words = unique_words(baseline_text)
@@ -113,9 +113,8 @@ class Memory:
         for i in range(0, end, self.step):
             window = text[i : i + self.window_size]
             score = self.information_score(window, baseline_words, baseline_embed)
-            if score >= self.tau:
-                emb = self.model.encode(window).tolist()
-                choices.append((score, window, emb))
+            if score >= self.sim_threshhold:
+                choices.append((score, window))
 
         if not choices:
             return
@@ -124,8 +123,7 @@ class Memory:
 
         k = min(top_k, len(choices))
         for j in range(k):
-            _, text_window, emb = choices[j]
-            self.memory.memories.append(MemoryItem(text=text_window, embedding=emb))
+            score, text_window = choices[j]
+            self.memory.memories.append(MemoryItem(text=text_window,sim_score=score))
 
         self._save()
-

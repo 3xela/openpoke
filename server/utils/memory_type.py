@@ -7,8 +7,8 @@ from typing import List, Optional
 @dataclass
 class MemoryItem:
     text: str
-    embedding: Optional[List[float]] = None
-    sim_score : float # this is for debugging, we need to know what the sim score is when we create a memoryitem 
+    sim_score : float = 0.0 # this is for debugging, we need to know what the sim score is when we create a memoryitem 
+
 
 
 @dataclass
@@ -18,7 +18,7 @@ class LLMMemory:
     def to_dict(self) -> dict:
         return {
             "memories": [
-                {"text": m.text, "embedding": m.embedding}
+                {"text": m.text, "sim_score": m.sim_score}
                 for m in self.memories
             ]
         }
@@ -30,7 +30,7 @@ class LLMMemory:
             items.append(
                 MemoryItem(
                     text=raw["text"],
-                    embedding=raw.get("embedding"),
+                    sim_score=raw["sim_score"],
                 )
             )
         return cls(memories=items)

@@ -184,7 +184,7 @@ class ExecutionBatchManager:
 
         from ..interaction_agent.runtime import InteractionAgentRuntime
 
-        runtime = InteractionAgentRuntime(ranker = get_agent_ranker(), rule_store=get_rule_store(), memory=get_memory)
+        runtime = InteractionAgentRuntime(ranker = get_agent_ranker(), rule_store=get_rule_store(), memory=get_memory())
         try:
             loop = asyncio.get_running_loop()
         except RuntimeError:
