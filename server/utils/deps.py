@@ -2,7 +2,7 @@
 from ..services.rules import RuleStore
 from .ranker import AgentRanker
 from sentence_transformers import SentenceTransformer
-from .memory import Memory
+from ..services.memory import Memory
 
 
 _ranker = None

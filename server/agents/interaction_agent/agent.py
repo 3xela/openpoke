@@ -5,7 +5,8 @@ from pathlib import Path
 from typing import Dict, List
 
 from ...services.execution import get_agent_roster
-from ...utils import AgentRanker, Memory
+from ...services.memory import Memory
+from ...utils import AgentRanker
 
 _prompt_path = Path(__file__).parent / "system_prompt.md"
 SYSTEM_PROMPT = _prompt_path.read_text(encoding="utf-8").strip()

@@ -47,7 +47,7 @@ def cosine_sim(a: np.ndarray, b: np.ndarray) -> float:
 class Memory:
     def __init__(self, embedder: SentenceTransformer):
         self.model = embedder
-        self.memory_path = Path(__file__).resolve().parents[1] / "data" / "memory.json"
+        self.memory_path = Path(__file__).resolve().parents[2] / "data" / "memory.json"
         self.memory: LLMMemory = self.load_memories()
         self.sim_threshhold = 0.35
         self.alpha = 0.5

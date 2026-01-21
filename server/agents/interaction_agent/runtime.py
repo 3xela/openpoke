@@ -91,7 +91,7 @@ class InteractionAgentRuntime:
 
             system_prompt = build_system_prompt()
             messages = prepare_message_with_memory(
-                user_message, transcript_before, ranker=self.ranker,memory = self.memory , message_type="user"
+                user_message, transcript_before, ranker=self.ranker, memory = self.memory , message_type="user"
             )
 
             logger.info("Processing user message through interaction agent")
